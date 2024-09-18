@@ -21,7 +21,7 @@ void accessL1(uint32_t, uint8_t *, uint32_t);
 
 typedef struct CacheLine
 {
-    uint8_t Valid;
+    uint8_t Valid; /*Valid bit: 1 = present, 0 = not present*/
     uint8_t Dirty;
     uint32_t Tag;
 } CacheLine;
