@@ -6,6 +6,13 @@ uint8_t DRAM[DRAM_SIZE];
 uint32_t time;
 Cache SimpleCache;
 
+/**************** Notes ***************/
+/*A 'Write-Back Policy' refers to a caching policy in computer science
+where data written into the cache is written to the backing store
+only when there is a cache conflict with that block*/
+/**/
+
+
 /**************** Time Manipulation ***************/
 void resetTime() { time = 0; }
 
@@ -44,16 +51,16 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     SimpleCache.init = 1;
     }
 
-  CacheLine *Line = &SimpleCache.line;
+    CacheLine *Line = &SimpleCache.line;
 
-  Tag = address >> 3; // Why do I do this?
+    Tag = address >> 3; // Why do I do this?
 
-  MemAddress = address >> 3; // again this....!
-  MemAddress = MemAddress << 3; // address of the block in memory
+    MemAddress = address >> 3; // again this....!
+    MemAddress = MemAddress << 3; // address of the block in memory
 
     /* access Cache*/
 
-  if (!Line->Valid || Line->Tag != Tag) {         // if block not present - miss
+    if (!Line->Valid || Line->Tag != Tag) {         // if block not present - miss
     accessDRAM(MemAddress, TempBlock, MODE_READ); // get new block from DRAM
 
     if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
