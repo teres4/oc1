@@ -33,6 +33,7 @@ power of 2
 address bits*/
 
 
+
 /**************** Time Manipulation ***************/
 void resetTime() { time = 0; }
 
@@ -73,10 +74,13 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
     CacheLine *Line = &SimpleCache.line;
 
-    Tag = address >> 3; // Why do I do this? - tag is 3 most significant bits
+    MemAddress = address;
+    Tag = address >> 18; // Why do I do this? - tag is 3 most significant bits??? doesnt really make sense, should be 18 bits 
 
-    MemAddress = address >> 3; // again this....! - idk
-    MemAddress = MemAddress << 3; // address of the block in memory
+    index = address >> 8; // L1SIZE is (256 * BLOCK_SIZE) so index has to be 8 bits
+    
+    //MemAddress = address >> 3; // again this....! - idk
+    //MemAddress = MemAddress << 3; // address of the block in memory
 
     /* access Cache*/
 
