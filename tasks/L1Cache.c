@@ -75,7 +75,7 @@ line size = 256 = 2^8
 so, line index = 8 bits
 */
 uint32_t getIndex(uint32_t address){
-  return address & 0x3FC0; // 0x3FC0 = 0b 0011 1111 1100 0000
+  return(address >> 6) & 0xFF; // 0x3FC0 = 0b 0011 1111 1100 0000
 }
 
 /*
