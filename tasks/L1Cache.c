@@ -5,7 +5,7 @@
 
 uint8_t DRAM[DRAM_SIZE];
 uint32_t time;
-Cache SimpleCache;
+Cache L1Cache;
 
 /**************** Notes ***************/
 /*A 'Write-Back Policy' refers to a caching policy in computer science
