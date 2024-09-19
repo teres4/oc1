@@ -1,11 +1,9 @@
 #include "L1Cache.h"
 
-// uint8_t L1Cache[L1_SIZE];
-// uint8_t L2Cache[L2_SIZE];
-
 uint8_t DRAM[DRAM_SIZE];
 uint32_t time;
 Cache L1Cache;
+
 
 /**************** Notes ***************/
 /*A 'Write-Back Policy' refers to a caching policy in computer science
@@ -75,7 +73,7 @@ line size = 256 = 2^8
 so, line index = 8 bits
 */
 uint32_t getIndex(uint32_t address){
-  return(address >> 6) & 0xFF; // 0x3FC0 = 0b 0011 1111 1100 0000
+  return(address >> 6) & 0xFF; // 0xFF = 1111 1111
 }
 
 /*
@@ -101,7 +99,7 @@ void initCache() {
     L1Cache.lines[i].Tag = 0;
 
     /* sets words to 0 */
-    for (int j = 0; i < BLOCK_SIZE; i += WORD_SIZE)
+    for (int j = 0; j < BLOCK_SIZE; j += WORD_SIZE)
       L1Cache.lines[i].Data[j] = 0;
     
   }
@@ -123,11 +121,12 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   index = getIndex(address);
   offset = getOffset(address);
 
-  //printf(" TAG: %d INDEX: %d OFFSET: %d", Tag, index, offset);
   // gets line of the right index
   CacheLine *Line = &L1Cache.lines[index];
 
   /* access Cache*/
+
+  printf("Tag: %d Index: %d Offset: %d ", Tag, index, offset);
 
   /* If it's a hit */
   if (Line->Valid && Line->Tag == Tag){
@@ -149,39 +148,22 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   // if block not present - miss
   else {    
-    printf("MISS:\t");
+    printf("MISS:");
+
     MemAddress = getMemAddress(address) ;  // get address of the block in memory
-    
-    if ((Line->Valid) && (Line->Dirty)) { // valid line w dirty block
-      accessDRAM(MemAddress, Line->Data, MODE_WRITE); // then write back old block
+
+    if ((Line->Valid) && Line->Dirty){ // if its a dirty block then write block to main memory
+      accessDRAM(MemAddress, Line->Data, MODE_WRITE);
     }
 
-
     accessDRAM(MemAddress, TempBlock, MODE_READ);
-    memcpy(&Line->Data[offset], TempBlock,
-          BLOCK_SIZE); // copy new block to cache line
+    
+    memcpy(&Line->Data[offset], TempBlock, BLOCK_SIZE); // copy new block to cache line
+
     Line->Valid = 1;
     Line->Tag = Tag;
     Line->Dirty = 0;
-   // if miss, then replaced with the correct block
 
-  // if (mode == MODE_READ) {    // read data from cache line
-  //   if (0 == (address % 8)) { // even word on block
-  //     // memcpy(data, &(L1Cache[0]), WORD_SIZE);
-  //   } else { // odd word on block
-  //     // memcpy(data, &(L1Cache[WORD_SIZE]), WORD_SIZE);
-  //   }
-  //   time += L1_READ_TIME;
-  // }
-
-  // if (mode == MODE_WRITE) { // write data from cache line
-  //   if (!(address % 8)) {   // even word on block
-  //     // memcpy(&(L1Cache[0]), data, WORD_SIZE);
-  //   } else { // odd word on block
-  //     // memcpy(&(L1Cache[WORD_SIZE]), data, WORD_SIZE);
-  //   }
-  //   time += L1_WRITE_TIME;
-  //   Line->Dirty = 1;
   }
 }
 
