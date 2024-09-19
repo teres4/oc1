@@ -1,7 +1,8 @@
 #include "L1Cache.h"
 
-uint8_t L1Cache[L1_SIZE];
-uint8_t L2Cache[L2_SIZE];
+// uint8_t L1Cache[L1_SIZE];
+// uint8_t L2Cache[L2_SIZE];
+
 uint8_t DRAM[DRAM_SIZE];
 uint32_t time;
 Cache SimpleCache;
@@ -42,58 +43,121 @@ uint32_t getTime() { return time; }
 /****************  RAM memory (byte addressable) ***************/
 void accessDRAM(uint32_t address, uint8_t *data, uint32_t mode) {
 
-    if (address >= DRAM_SIZE - WORD_SIZE + 1)
+  if (address >= DRAM_SIZE - WORD_SIZE + 1)
     exit(-1);
 
-
-    if (mode == MODE_READ) {
+  if (mode == MODE_READ) {
     memcpy(data, &(DRAM[address]), BLOCK_SIZE);
     time += DRAM_READ_TIME;
-    }
+  }
 
-    if (mode == MODE_WRITE) {
+  if (mode == MODE_WRITE) {
     memcpy(&(DRAM[address]), data, BLOCK_SIZE);
     time += DRAM_WRITE_TIME;
-    }
+  }
+}
+
+
+/*
+extracting block's offset (6 least significant bits)
+
+block size = 16 * word size = 64 bytes = 2^6 bytes
+so, block offset = 6 bits
+*/
+uint32_t getOffset(uint32_t address){
+  return address & 0x3F;  // 0x3F = 0011 1111
+}
+
+
+/*
+returns line index, 8 bits
+
+line size = 256 = 2^8
+so, line index = 8 bits
+*/
+uint32_t getIndex(uint32_t address){
+  return (address >> 6) & 0xFF; // 0xFF = 1111 1111
+}
+
+/*
+extracting the tag, 18 (= 32 - 6 - 8) most significant bits of address
+
+*/
+uint32_t getTag(uint32_t address){
+  return address >> 14; // removing the 14 (6 + 8) least significant bits
+}
+
+/* removes the last 6 bits (offset) */
+uint32_t getMemAddress(uint32_t address){
+  return address & 0xC0; // 0xC0 = 1100 0000
 }
 
 /*********************** L1 cache *************************/
 
-void initCache() { SimpleCache.init = 0; }
+/* Initialize L1 Cache */
+void initCache() {
+  L1Cache.init = 1;
+  for (int i = 0; i < L1_CACHE_LINES; i++ ){
+    L1Cache.lines[i].Valid = 0;
+    L1Cache.lines[i].Dirty = 0;
+    L1Cache.lines[i].Tag = 0;
+
+    /* sets words to 0 */
+    for (int j = 0; i < BLOCK_SIZE; i += WORD_SIZE)
+      L1Cache.lines[i].Data[j] = 0;
+    
+  }
+}
+
 
 void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
-    uint32_t index, Tag, MemAddress;
-    uint8_t TempBlock[BLOCK_SIZE];
+  uint32_t index, Tag, MemAddress, offset;
+  uint8_t TempBlock[BLOCK_SIZE];
+  memset(TempBlock, 0, BLOCK_SIZE);
 
   /* init cache */
-    if (SimpleCache.init == 0) {
-    SimpleCache.line.Valid = 0;
-    SimpleCache.init = 1;
+  if (L1Cache.init == 0) {
+    initCache();
+  }
+
+  Tag = getTag(address);
+  index = getIndex(address);
+  offset = getOffset(address);
+
+  // gets line of the right index
+  CacheLine *Line = &L1Cache.lines[index];
+
+  /* access Cache*/
+
+  /* If it's a hit */
+  if (Line->Valid && Line->Tag == Tag){
+
+    // copy info from cache line to data
+    if (mode == MODE_READ){
+      memcpy(data, &Line->Data[offset], WORD_SIZE);
+      time += L1_READ_TIME;
     }
 
-    CacheLine *Line = &SimpleCache.line;
+    // copy info from data to cache line 
+    if (mode == MODE_WRITE){
+      memcpy(&Line->Data[offset], data, WORD_SIZE);
+      time += L1_WRITE_TIME;
+      // it's unsynced w main memory
+      Line->Dirty = 1;
+    }
+  }
 
-    MemAddress = address;
-    Tag = address >> 18; // Why do I do this? - tag is 3 most significant bits??? doesnt really make sense, should be 18 bits 
-
-    index = address >> 8; // L1SIZE is (256 * BLOCK_SIZE) so index has to be 8 bits
+  // if block not present - miss
+  else {    
+    MemAddress = getMemAddress(address) ;        // get address of the block in memory
     
-    //MemAddress = address >> 3; // again this....! - idk
-    //MemAddress = MemAddress << 3; // address of the block in memory
-
-    /* access Cache*/
-
-    if (!Line->Valid || Line->Tag != Tag) {         // if block not present - miss
-    accessDRAM(MemAddress, TempBlock, MODE_READ); // get new block from DRAM
-
-    if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
-      MemAddress = Line->Tag << 3;        // get address of the block in memory
-      accessDRAM(MemAddress, &(L1Cache[0]), MODE_WRITE); // then write back old block
+    if ((Line->Valid) && (Line->Dirty)) { // valid line w dirty block
+      accessDRAM(MemAddress, &Line->Data, MODE_WRITE); // then write back old block
     }
 
-    memcpy(&(L1Cache[0]), TempBlock,
-           BLOCK_SIZE); // copy new block to cache line
+    // memcpy(&(L1Cache[0]), TempBlock,
+          //  BLOCK_SIZE); // copy new block to cache line
     Line->Valid = 1;
     Line->Tag = Tag;
     Line->Dirty = 0;
@@ -101,28 +165,28 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   if (mode == MODE_READ) {    // read data from cache line
     if (0 == (address % 8)) { // even word on block
-    memcpy(data, &(L1Cache[0]), WORD_SIZE);
+      // memcpy(data, &(L1Cache[0]), WORD_SIZE);
     } else { // odd word on block
-    memcpy(data, &(L1Cache[WORD_SIZE]), WORD_SIZE);
+      // memcpy(data, &(L1Cache[WORD_SIZE]), WORD_SIZE);
     }
     time += L1_READ_TIME;
-    }
+  }
 
   if (mode == MODE_WRITE) { // write data from cache line
     if (!(address % 8)) {   // even word on block
-    memcpy(&(L1Cache[0]), data, WORD_SIZE);
+      // memcpy(&(L1Cache[0]), data, WORD_SIZE);
     } else { // odd word on block
-    memcpy(&(L1Cache[WORD_SIZE]), data, WORD_SIZE);
+      // memcpy(&(L1Cache[WORD_SIZE]), data, WORD_SIZE);
     }
     time += L1_WRITE_TIME;
     Line->Dirty = 1;
-    }
+  }
 }
 
 void read(uint32_t address, uint8_t *data) {
-    accessL1(address, data, MODE_READ);
+  accessL1(address, data, MODE_READ);
 }
 
 void write(uint32_t address, uint8_t *data) {
-    accessL1(address, data, MODE_WRITE);
+  accessL1(address, data, MODE_WRITE);
 }
