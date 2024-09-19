@@ -150,10 +150,10 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   // if block not present - miss
   else {    
-    MemAddress = getMemAddress(address) ;        // get address of the block in memory
+    MemAddress = getMemAddress(address) ;  // get address of the block in memory
     
     if ((Line->Valid) && (Line->Dirty)) { // valid line w dirty block
-      accessDRAM(MemAddress, &Line->Data, MODE_WRITE); // then write back old block
+      accessDRAM(MemAddress, Line->Data, MODE_WRITE); // then write back old block
     }
 
     // memcpy(&(L1Cache[0]), TempBlock,
@@ -163,24 +163,24 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     Line->Dirty = 0;
   } // if miss, then replaced with the correct block
 
-  if (mode == MODE_READ) {    // read data from cache line
-    if (0 == (address % 8)) { // even word on block
-      // memcpy(data, &(L1Cache[0]), WORD_SIZE);
-    } else { // odd word on block
-      // memcpy(data, &(L1Cache[WORD_SIZE]), WORD_SIZE);
-    }
-    time += L1_READ_TIME;
-  }
+  // if (mode == MODE_READ) {    // read data from cache line
+  //   if (0 == (address % 8)) { // even word on block
+  //     // memcpy(data, &(L1Cache[0]), WORD_SIZE);
+  //   } else { // odd word on block
+  //     // memcpy(data, &(L1Cache[WORD_SIZE]), WORD_SIZE);
+  //   }
+  //   time += L1_READ_TIME;
+  // }
 
-  if (mode == MODE_WRITE) { // write data from cache line
-    if (!(address % 8)) {   // even word on block
-      // memcpy(&(L1Cache[0]), data, WORD_SIZE);
-    } else { // odd word on block
-      // memcpy(&(L1Cache[WORD_SIZE]), data, WORD_SIZE);
-    }
-    time += L1_WRITE_TIME;
-    Line->Dirty = 1;
-  }
+  // if (mode == MODE_WRITE) { // write data from cache line
+  //   if (!(address % 8)) {   // even word on block
+  //     // memcpy(&(L1Cache[0]), data, WORD_SIZE);
+  //   } else { // odd word on block
+  //     // memcpy(&(L1Cache[WORD_SIZE]), data, WORD_SIZE);
+  //   }
+  //   time += L1_WRITE_TIME;
+  //   Line->Dirty = 1;
+  // }
 }
 
 void read(uint32_t address, uint8_t *data) {
