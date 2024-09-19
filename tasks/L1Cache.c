@@ -65,9 +65,8 @@ block size = 16 * word size = 64 bytes = 2^6 bytes
 so, block offset = 6 bits
 */
 uint32_t getOffset(uint32_t address){
-  return address & 0x3F;  // 0x3F = 0011 1111
+  return address & 0x3F;  // 0x3F = 0b 0000 0011 1111
 }
-
 
 /*
 returns line index, 8 bits
@@ -76,12 +75,11 @@ line size = 256 = 2^8
 so, line index = 8 bits
 */
 uint32_t getIndex(uint32_t address){
-  return (address >> 6) & 0xFF; // 0xFF = 1111 1111
+  return address & 0x3FC0; // 0x3FC0 = 0b 0011 1111 1100 0000
 }
 
 /*
 extracting the tag, 18 (= 32 - 6 - 8) most significant bits of address
-
 */
 uint32_t getTag(uint32_t address){
   return address >> 14; // removing the 14 (6 + 8) least significant bits
@@ -125,6 +123,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   index = getIndex(address);
   offset = getOffset(address);
 
+  //printf(" TAG: %d INDEX: %d OFFSET: %d", Tag, index, offset);
   // gets line of the right index
   CacheLine *Line = &L1Cache.lines[index];
 
@@ -132,7 +131,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   /* If it's a hit */
   if (Line->Valid && Line->Tag == Tag){
-
+    printf("HIT:");
     // copy info from cache line to data
     if (mode == MODE_READ){
       memcpy(data, &Line->Data[offset], WORD_SIZE);
@@ -150,18 +149,21 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   // if block not present - miss
   else {    
+    printf("MISS:\t");
     MemAddress = getMemAddress(address) ;  // get address of the block in memory
     
     if ((Line->Valid) && (Line->Dirty)) { // valid line w dirty block
       accessDRAM(MemAddress, Line->Data, MODE_WRITE); // then write back old block
     }
 
-    // memcpy(&(L1Cache[0]), TempBlock,
-          //  BLOCK_SIZE); // copy new block to cache line
+
+    accessDRAM(MemAddress, TempBlock, MODE_READ);
+    memcpy(&Line->Data[offset], TempBlock,
+          BLOCK_SIZE); // copy new block to cache line
     Line->Valid = 1;
     Line->Tag = Tag;
     Line->Dirty = 0;
-  } // if miss, then replaced with the correct block
+   // if miss, then replaced with the correct block
 
   // if (mode == MODE_READ) {    // read data from cache line
   //   if (0 == (address % 8)) { // even word on block
@@ -180,7 +182,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   //   }
   //   time += L1_WRITE_TIME;
   //   Line->Dirty = 1;
-  // }
+  }
 }
 
 void read(uint32_t address, uint8_t *data) {
