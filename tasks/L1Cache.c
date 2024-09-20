@@ -56,34 +56,30 @@ void accessDRAM(uint32_t address, uint8_t *data, uint32_t mode) {
 }
 
 
-/*
-extracting block's offset (6 least significant bits)
-
-block size = 16 * word size = 64 bytes = 2^6 bytes
-so, block offset = 6 bits
+/** Extracting block's offset (6 least significant bits) 
+ * block size = 16 * word size = 64 bytes = 2^6
 */
 uint32_t getOffset(uint32_t address){
-  return address & 0x3F;  // 0x3F = 0b 0000 0011 1111
+  return address & 0x3F;  // 0x3F = 0011 1111
 }
 
-/*
-returns line index, 8 bits
 
-line size = 256 = 2^8
-so, line index = 8 bits
-*/
+/** Extract index (8 bits)
+ * line size = 256 = 2^8
+ */
 uint32_t getIndex(uint32_t address){
   return(address >> 6) & 0xFF; // 0xFF = 1111 1111
 }
 
-/*
-extracting the tag, 18 (= 32 - 6 - 8) most significant bits of address
-*/
+/**
+ * Extracting tag (18 most significant bits).
+ * 32 - 8 - 6 = 18
+ */
 uint32_t getTag(uint32_t address){
   return address >> 14; // removing the 14 (6 + 8) least significant bits
 }
 
-/* removes the last 6 bits (offset) */
+/* Removes the last 6 bits (offset) */
 uint32_t getMemAddress(uint32_t address){
   return address - getOffset(address); 
 }
@@ -125,42 +121,34 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   CacheLine *Line = &L1Cache.lines[index];
 
   /* access Cache*/
+
   // if block not present - miss
   if (!Line->Valid || Line->Tag != Tag) {  
-    //printf("MISS:\t");
     MemAddress = getMemAddress(address) ;  // get address of the block in memory
     accessDRAM(MemAddress, TempBlock, MODE_READ);
 
-    if ((Line->Valid) && (Line->Dirty)) { // valid line w dirty block
-      accessDRAM(MemAddress, Line->Data, MODE_WRITE); // then write back old block
+    if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
+      accessDRAM(MemAddress, Line->Data, MODE_WRITE); // write back old block
     }
 
-    memcpy(Line->Data, TempBlock,
-          BLOCK_SIZE); // copy new block to cache line
+    memcpy(Line->Data, TempBlock, BLOCK_SIZE); // copy new block to cache line
     Line->Valid = 1;
     Line->Tag = Tag;
     Line->Dirty = 0;
-  }
-  /* If it's a hit */
-  
-    //printf("HIT:");
-    // copy info from cache line to data
-  if (mode == MODE_READ){
+  }  // if miss, then replaced with the correct block
+
+  if (mode == MODE_READ){ // read data from cache line
     memcpy(data, &(Line->Data[offset]), WORD_SIZE);
     time += L1_READ_TIME;
   }
 
-  // copy info from data to cache line 
-  if (mode == MODE_WRITE){
+  if (mode == MODE_WRITE){ // write data from cache line
     memcpy(&(Line->Data[offset]), data, WORD_SIZE);
     time += L1_WRITE_TIME;
     // it's unsynced w main memory
     Line->Dirty = 1;
   }
-    
-   // if miss, then replaced with the correct block
-
-  }
+}
 
 
 void read(uint32_t address, uint8_t *data) {
