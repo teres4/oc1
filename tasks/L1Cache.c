@@ -85,7 +85,7 @@ uint32_t getTag(uint32_t address){
 
 /* removes the last 6 bits (offset) */
 uint32_t getMemAddress(uint32_t address){
-  return address & 0xC0; // 0xC0 = 1100 0000
+  return address - getOffset(address); 
 }
 
 /*********************** L1 cache *************************/
@@ -125,47 +125,43 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   CacheLine *Line = &L1Cache.lines[index];
 
   /* access Cache*/
-
-  printf("Tag: %d Index: %d Offset: %d ", Tag, index, offset);
-
-  /* If it's a hit */
-  if (Line->Valid && Line->Tag == Tag){
-    printf("HIT:");
-    // copy info from cache line to data
-    if (mode == MODE_READ){
-      memcpy(data, &Line->Data[offset], WORD_SIZE);
-      time += L1_READ_TIME;
-    }
-
-    // copy info from data to cache line 
-    if (mode == MODE_WRITE){
-      memcpy(&Line->Data[offset], data, WORD_SIZE);
-      time += L1_WRITE_TIME;
-      // it's unsynced w main memory
-      Line->Dirty = 1;
-    }
-  }
-
   // if block not present - miss
-  else {    
-    printf("MISS:");
-
+  if (!Line->Valid || Line->Tag != Tag) {  
+    //printf("MISS:\t");
     MemAddress = getMemAddress(address) ;  // get address of the block in memory
+    accessDRAM(MemAddress, TempBlock, MODE_READ);
 
-    if ((Line->Valid) && Line->Dirty){ // if its a dirty block then write block to main memory
-      accessDRAM(MemAddress, Line->Data, MODE_WRITE);
+    if ((Line->Valid) && (Line->Dirty)) { // valid line w dirty block
+      accessDRAM(MemAddress, Line->Data, MODE_WRITE); // then write back old block
     }
 
-    accessDRAM(MemAddress, TempBlock, MODE_READ);
-    
-    memcpy(&Line->Data[offset], TempBlock, BLOCK_SIZE); // copy new block to cache line
-
+    memcpy(Line->Data, TempBlock,
+          BLOCK_SIZE); // copy new block to cache line
     Line->Valid = 1;
     Line->Tag = Tag;
     Line->Dirty = 0;
+  }
+  /* If it's a hit */
+  
+    //printf("HIT:");
+    // copy info from cache line to data
+  if (mode == MODE_READ){
+    memcpy(data, &(Line->Data[offset]), WORD_SIZE);
+    time += L1_READ_TIME;
+  }
+
+  // copy info from data to cache line 
+  if (mode == MODE_WRITE){
+    memcpy(&(Line->Data[offset]), data, WORD_SIZE);
+    time += L1_WRITE_TIME;
+    // it's unsynced w main memory
+    Line->Dirty = 1;
+  }
+    
+   // if miss, then replaced with the correct block
 
   }
-}
+
 
 void read(uint32_t address, uint8_t *data) {
   accessL1(address, data, MODE_READ);
