@@ -71,14 +71,14 @@ Returns line index (8 bits).
 Line size = 256 = 2^8.
 Line index = 8 bits.
 ------------------------------------------------------------------------------*/
-uint32_t getIndex(uint32_t address){
+uint32_t getIndexL1(uint32_t address){
   return(address >> 6) & 0xFF; // 0xFF = 1111 1111
 }
 
 /*------------------------------------------------------------------------------
 Extracts the tag, 18 (= 32 - 6 - 8) most significant bits of address.
 ------------------------------------------------------------------------------*/
-uint32_t getTag(uint32_t address){
+uint32_t getTagL1(uint32_t address){
   return address >> 14; // removing the 14 (6 + 8) least significant bits
 }
 
@@ -132,8 +132,8 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     initCacheL1();
   }
 
-  Tag = getTag(address);
-  index = getIndex(address);
+  Tag = getTagL1(address);
+  index = getIndexL1(address);
   offset = getOffset(address);
   
   // gets line of the right index
@@ -198,6 +198,23 @@ void initCacheL2() {
 
 
 /*------------------------------------------------------------------------------
+Returns line index (9 bits).
+Line size = 512 = 2^9.
+Line index = 9 bits.
+------------------------------------------------------------------------------*/
+uint32_t getIndexL2(uint32_t address){
+  return(address >> 6) & 0x1FF; // 0xFF = 0001 1111 1111
+}
+
+/*------------------------------------------------------------------------------
+Extracts the tag, 17 (= 32 - 6 - 9) most significant bits of address.
+------------------------------------------------------------------------------*/
+uint32_t getTagL2(uint32_t address){
+  return address >> 15; // removing the 14 (6 + 9) least significant bits
+}
+
+
+/*------------------------------------------------------------------------------
 Program's access point to the L2 Cache.
 
 Notes:
@@ -215,8 +232,8 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
     initCacheL2();
   }
 
-  Tag = getTag(address);
-  index = getIndex(address);
+  Tag = getTagL2(address);
+  index = getIndexL2(address);
   offset = getOffset(address);
 
   // gets line of the right index

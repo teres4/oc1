@@ -7,8 +7,8 @@ FILE2 = results_L2_1W.txt
 DIFF_FILE = diff.txt
 
 all:
-	$(CC) $(CFLAGS) SimpleProgram.c L2Cache.c -o $(TARGET)
-	$(CC) $(CFLAGS) SimpleProgram.c L2Cache.c -o $(TARGET2)
+	$(CC) $(CFLAGS) SimpleProgramL2.c L2Cache.c -o $(TARGET)
+	$(CC) $(CFLAGS) SimpleProgramL2.c L2Cache.c -o $(TARGET2)
 
 	./test > $(FILE1)
 	@diff -u $(FILE1) $(FILE2) > diff.txt || echo "Differences found. Please check the output."

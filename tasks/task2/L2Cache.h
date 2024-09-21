@@ -20,9 +20,13 @@ void accessDRAM(uint32_t, uint8_t *, uint32_t);
 /***************** Address manipulation **************/
 uint32_t getOffset(uint32_t);
 
-uint32_t getIndex(uint32_t);
+uint32_t getIndexL1(uint32_t);
 
-uint32_t getTag(uint32_t);
+uint32_t getTagL1(uint32_t);
+
+uint32_t getIndexL2(uint32_t);
+
+uint32_t getTagL2(uint32_t);
 
 uint32_t getMemAddress(uint32_t);
 
