@@ -4,6 +4,12 @@
 *                                                                              *
 *******************************************************************************/
 
+/*------------------------------------------------------------------------------
+NOTAS:
+- Falta implementar o retorno do valor, em caso de miss, para a função/memória/
+programa que chamou a respetiva cache...é só mudar o valor de *data
+------------------------------------------------------------------------------*/
+
 #include "L2Cache.h"
 
 uint8_t DRAM[DRAM_SIZE];
@@ -81,39 +87,6 @@ Removes the last 6 bits (offset).
 uint32_t getMemAddress(uint32_t address){
   return address - getOffset(address); 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -210,34 +183,6 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
    // if miss, then replaced with the correct block
 
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -338,22 +283,6 @@ void accessL2(uint32_t address, uint8_t *block, uint32_t mode) {
    // if miss, then replaced with the correct block
 
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
