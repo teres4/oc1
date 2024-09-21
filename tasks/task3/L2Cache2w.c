@@ -198,7 +198,7 @@ void initCacheL2() {
         L2Cache.sets->lines[i].Valid = 0;
         L2Cache.sets->lines[i].Dirty = 0;
         L2Cache.sets->lines[i].Tag = 0;
-        L2Cache.sets->lines[i].Time = -1;
+        L2Cache.sets->lines[i].Time = 0;
     
         for (int f = 0; f < BLOCK_SIZE; f += WORD_SIZE){
             L2Cache.sets[i].lines[j].Data[f] = 0;
@@ -211,6 +211,8 @@ void initCacheL2() {
 
 /*------------------------------------------------------------------------------
 Program's access point to the L2 Cache.
+
+2 way set associative cache with LRU
 ------------------------------------------------------------------------------*/
 void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
 
@@ -231,8 +233,6 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
   Set *Set= &L2Cache.sets[index];
 
   /* access Cache*/
-
-  // if block not present - miss
     for(int i = 0; i < WAYS; i++){
         if(Set->lines[i].Valid && Set->lines[i].Tag == Tag){
             /*its a hit*/
@@ -276,15 +276,12 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
     Set->lines[way].Tag = Tag;
     Set->lines[way].Dirty = 0;
   
-
-  /* If it's a hit */
-  
     if (mode == MODE_READ){ // read data from cache line
         memcpy(data, &(Set->lines[way].Data[offset]), WORD_SIZE);
         time += L2_READ_TIME;
     }
 
-  // copy info from data to cache line 
+    // copy info from data to cache line 
     if (mode == MODE_WRITE){ // write data from cache line
         memcpy(&(Set->lines[way].Data[offset]), data, WORD_SIZE);
         time += L2_WRITE_TIME;
