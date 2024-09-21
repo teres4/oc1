@@ -1,23 +1,29 @@
 #ifndef L1CACHE_H
 #define L1CACHE_H
 
-//ifndef cache L2?
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include "Cache.h"
 
+#define L1_CACHE_LINES (L1_SIZE / BLOCK_SIZE)
+
 void resetTime();
 
 uint32_t getTime();
 
-#define L1_CACHE_LINES (L1_SIZE / BLOCK_SIZE)
-#define L2_CACHE_LINES (L2_SIZE / BLOCK_SIZE)
-
 /****************  RAM memory (byte addressable) ***************/
 void accessDRAM(uint32_t, uint8_t *, uint32_t);
+
+/***************** Address manipulation **************/
+uint32_t getOffset(uint32_t);
+
+uint32_t getIndex(uint32_t);
+
+uint32_t getTag(uint32_t);
+
+uint32_t getMemAddress(uint32_t);
 
 /*********************** Cache *************************/
 

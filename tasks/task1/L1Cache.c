@@ -5,34 +5,6 @@ uint32_t time;
 Cache L1Cache;
 
 
-/**************** Notes ***************/
-/*A 'Write-Back Policy' refers to a caching policy in computer science
-where data written into the cache is written to the backing store
-only when there is a cache conflict with that block*/
-
-
-
-/*Quando os dados são atualizados apenas em memória e em cache só é atualizada mais tarde, 
-temos a política write-back. Os dados são atualizados em memória somente quando a linha da 
-cache está pronta para ser trocada, o que significa que a atualização do armazenamento acontece 
-assincronamente numa sequência à parte! É possível começar uma sequência de diferentes maneiras 
-antes do retorno da nossa resposta, periodicamente ou integrada na cache baseado numa entrada da 
-cache chamada dirty state. Quando este é trocado, voltamos a escrever em memória e 
-podemos usar um buffer para permitir a troca de blocos que têm que ser lidos primeiro.*/
-
-
-
-/*'Least Recently Used Replacement' is a cache replacement policy in computer science 
-where the block that has been least recently accessed is evicted when the cache is full.*/
-
-
-/* #Blocks are a
-power of 2
-– Use low-order
-address bits*/
-
-
-
 /**************** Time Manipulation ***************/
 void resetTime() { time = 0; }
 
@@ -122,8 +94,11 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   /* access Cache*/
 
+  // printf("TAG: %d INDEX: %d OFFSET: %d\t", Tag, index, offset);
+
   // if block not present - miss
   if (!Line->Valid || Line->Tag != Tag) {  
+    // printf("MISS: ");
     MemAddress = getMemAddress(address) ;  // get address of the block in memory
     accessDRAM(MemAddress, TempBlock, MODE_READ);
 
@@ -137,6 +112,8 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     Line->Dirty = 0;
   }  // if miss, then replaced with the correct block
 
+  else
+    // printf("HIT: ");
   if (mode == MODE_READ){ // read data from cache line
     memcpy(data, &(Line->Data[offset]), WORD_SIZE);
     time += L1_READ_TIME;

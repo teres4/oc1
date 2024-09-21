@@ -14,8 +14,9 @@ programa que chamou a respetiva cache...é só mudar o valor de *data
 
 uint8_t DRAM[DRAM_SIZE];
 uint32_t time;
-Cache L1Cache;
-Cache L2Cache;
+
+CacheL1 L1Cache;
+CacheL2 L2Cache;
 
 
 /*******************************************************************************
@@ -97,7 +98,7 @@ uint32_t getMemAddress(uint32_t address){
 /*------------------------------------------------------------------------------ 
 Initializes L1 Cache.
 ------------------------------------------------------------------------------*/
-void initCache() {
+void initCacheL1() {
   L1Cache.init = 1;
   for (int i = 0; i < L1_CACHE_LINES; i++ ){
     L1Cache.lines[i].Valid = 0;
@@ -122,7 +123,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   // init cache
   if (L1Cache.init == 0) {
-    initCache();
+    initCacheL1();
   }
 
   Tag = getTag(address);
@@ -136,13 +137,11 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   /* access cache */
 
   // if block NOT present - miss
-  
   if (!Line->Valid || Line->Tag != Tag) {  
-    //printf("MISS:\t");
-    //MemAddress = getMemAddress(address); // get address of the block in memory
-    //accessDRAM(MemAddress, TempBlock, MODE_READ);
 
-    accessL2(address, &TempBlock, mode); //Cache L2 writes data into the TempBlock
+    MemAddress = getMemAddress(address); // get address of the block in memory
+
+    accessL2(MemAddress, TempBlock, MODE_READ); // Cache L2 writes data into the TempBlock
     
     if ((Line->Valid) && (Line->Dirty)) { // valid line with dirty block
       //accessDRAM(MemAddress, Line->Data, MODE_WRITE); // 'write back' old block
@@ -193,7 +192,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 /*------------------------------------------------------------------------------ 
 Initializes L2 Cache.
 ------------------------------------------------------------------------------*/
-void initCache() {
+void initCacheL2() {
   L2Cache.init = 1;
   for (int i = 0; i < L2_CACHE_LINES; i++){ //fix error?
     L2Cache.lines[i].Valid = 0;
@@ -222,7 +221,7 @@ void accessL2(uint32_t address, uint8_t *block, uint32_t mode) {
 
   /* init cache */
   if (L2Cache.init == 0) {
-    initCache();
+    initCacheL2();
   }
 
   Tag = getTag(address);
@@ -231,10 +230,6 @@ void accessL2(uint32_t address, uint8_t *block, uint32_t mode) {
 
   // gets line of the right index
   CacheLine *Line = &L2Cache.lines[index];
-
-
-
-
 
 
 
