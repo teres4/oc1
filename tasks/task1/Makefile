@@ -8,8 +8,9 @@ DIFF_FILE = diff.txt
 
 all:
 	$(CC) $(CFLAGS) SimpleProgram.c L1Cache.c -o $(TARGET)
-	$(CC) $(CFLAGS) testhitmiss.c L1Cache.c -o $(TARGET2)
 	$(CC) $(CFLAGS) SimpleProgram.c L1Cache.c -o $(TARGET2)
+# $(CC) $(CFLAGS) testhitmiss.c L1Cache.c -o $(TARGET2)
+
 
 clean:
 	rm $(TARGET) $(TARGET2) $(FILE1) $(DIFF_FILE)

@@ -112,8 +112,9 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     Line->Dirty = 0;
   }  // if miss, then replaced with the correct block
 
-  else
+  // else
     // printf("HIT: ");
+    
   if (mode == MODE_READ){ // read data from cache line
     memcpy(data, &(Line->Data[offset]), WORD_SIZE);
     time += L1_READ_TIME;

@@ -28,6 +28,8 @@ uint32_t getMemAddress(uint32_t);
 
 /*********************** Cache *************************/
 
+void initCache();
+
 void initCacheL1();
 void accessL1(uint32_t, uint8_t *, uint32_t);
 

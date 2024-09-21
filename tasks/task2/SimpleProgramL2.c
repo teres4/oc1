@@ -10,7 +10,7 @@ int main() {
   for(int n = 1; n <= DRAM_SIZE/4; n*=WORD_SIZE) {
 
     resetTime();
-    initCacheL1();
+    initCache();
 
     printf("\nNumber of words: %d\n", (n-1)/WORD_SIZE + 1);
     

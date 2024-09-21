@@ -8,13 +8,18 @@ DIFF_FILE = diff.txt
 
 all:
 	$(CC) $(CFLAGS) SimpleProgram.c L2Cache.c -o $(TARGET)
+	$(CC) $(CFLAGS) SimpleProgram.c L2Cache.c -o $(TARGET2)
+
+	./test > $(FILE1)
+	@diff -u $(FILE1) $(FILE2) > diff.txt || echo "Differences found. Please check the output."
+
 
 clean:
 	rm $(TARGET) $(TARGET2) $(FILE1) $(DIFF_FILE)
 
-output:
-	./test > $(FILE1)
+# output:
+# 	./test > $(FILE1)
 
 
-resposta:
-	@diff -u $(FILE1) $(FILE2) > diff.txt || echo "Differences found. Please check the output."
+# resposta:
+# 	@diff -u $(FILE1) $(FILE2) > diff.txt || echo "Differences found. Please check the output."

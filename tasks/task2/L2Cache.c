@@ -90,6 +90,12 @@ uint32_t getMemAddress(uint32_t address){
 }
 
 
+void initCache() {
+  initCacheL1();
+  initCacheL2();
+}
+
+
 
 /*******************************************************************************
  L1 cache 
@@ -129,59 +135,44 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   Tag = getTag(address);
   index = getIndex(address);
   offset = getOffset(address);
-
+  
   // gets line of the right index
   CacheLine *Line = &L1Cache.lines[index];
-
 
   /* access cache */
 
   // if block NOT present - miss
   if (!Line->Valid || Line->Tag != Tag) {  
-
-    MemAddress = getMemAddress(address); // get address of the block in memory
-
-    accessL2(MemAddress, TempBlock, MODE_READ); // Cache L2 writes data into the TempBlock
     
-    if ((Line->Valid) && (Line->Dirty)) { // valid line with dirty block
-      //accessDRAM(MemAddress, Line->Data, MODE_WRITE); // 'write back' old block
+      MemAddress = getMemAddress(address); // get address of the block in memory
+      accessL2(MemAddress, TempBlock, MODE_READ); // reads new block from L2
 
-      //TODO: IMPLEMENTAR MECÂNICA DE WRITE-BACK
+    if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
+      accessL2(MemAddress, Line->Data, MODE_WRITE); // write back old block to L2
     }
 
     memcpy(Line->Data, TempBlock, BLOCK_SIZE); // copy new block to cache line
-    //OK ESCREVEU O BLOCO NA LINE...E DEPOIS? NÃO TEM DE DEVOLVER LOGO AO PROGRAMA?
-    //OU SEJA, NÃO FALTA FAZER UM COPY DESTA LINHA ATUALIZADA PARA O "DATA"?
-    //ESPERA PELA PRÓXIMA CHAMADA DE FUNÇÃO?
+
     Line->Valid = 1;
     Line->Tag = Tag;
     Line->Dirty = 0;
   }
   
+  // else
+  //   printf("HIT: ");
 
-
-
-
-
-  // if block IS present - hit */
-    //printf("HIT:");
-    // copy info from cache line to data
-  if (mode == MODE_READ){
+  if (mode == MODE_READ){ // read data from cache line
     memcpy(data, &(Line->Data[offset]), WORD_SIZE);
     time += L1_READ_TIME;
   }
 
-  // copy info from data to cache line 
-  if (mode == MODE_WRITE){
+  if (mode == MODE_WRITE){ // write data from cache line
     memcpy(&(Line->Data[offset]), data, WORD_SIZE);
     time += L1_WRITE_TIME;
     // it's unsynced w main memory
     Line->Dirty = 1;
   }
-    
-   // if miss, then replaced with the correct block
-
-  }
+}
 
 
 
@@ -194,7 +185,7 @@ Initializes L2 Cache.
 ------------------------------------------------------------------------------*/
 void initCacheL2() {
   L2Cache.init = 1;
-  for (int i = 0; i < L2_CACHE_LINES; i++){ //fix error?
+  for (int i = 0; i < L2_CACHE_LINES; i++){
     L2Cache.lines[i].Valid = 0;
     L2Cache.lines[i].Dirty = 0;
     L2Cache.lines[i].Tag = 0;
@@ -202,9 +193,9 @@ void initCacheL2() {
     /* sets words to 0 */
     for (int j = 0; j < BLOCK_SIZE; j += WORD_SIZE)
       L2Cache.lines[i].Data[j] = 0;
-    
   }
 }
+
 
 /*------------------------------------------------------------------------------
 Program's access point to the L2 Cache.
@@ -213,7 +204,7 @@ Notes:
 - could maybe be optimized by passing tag, index and offset as args instead of
 calculating them a second time.
 ------------------------------------------------------------------------------*/
-void accessL2(uint32_t address, uint8_t *block, uint32_t mode) {
+void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
 
   uint32_t index, Tag, MemAddress, offset;
   uint8_t TempBlock[BLOCK_SIZE];
@@ -231,53 +222,39 @@ void accessL2(uint32_t address, uint8_t *block, uint32_t mode) {
   // gets line of the right index
   CacheLine *Line = &L2Cache.lines[index];
 
-
-
   /* access Cache*/
+
   // if block not present - miss
   if (!Line->Valid || Line->Tag != Tag) {  
-    //printf("MISS:\t");
     MemAddress = getMemAddress(address) ;  // get address of the block in memory
-    accessDRAM(MemAddress, TempBlock, MODE_READ);
+    accessDRAM(MemAddress, TempBlock, MODE_READ); // access memory and get block
 
     if ((Line->Valid) && (Line->Dirty)) { // valid line w dirty block
       accessDRAM(MemAddress, Line->Data, MODE_WRITE); // then write back old block
     }
 
     memcpy(Line->Data, TempBlock, BLOCK_SIZE); // copy new block to cache line
-    //MESMA DUVIDA, ESPERA PELA PROXIMA CALL OU FALTA "ENVIAR" O VALOR?
+
     Line->Valid = 1;
     Line->Tag = Tag;
     Line->Dirty = 0;
   }
 
-
-
-
-
-
-
   /* If it's a hit */
   
-    //printf("HIT:");
-    // copy info from cache line to data
-  if (mode == MODE_READ){
-    memcpy(block, &(Line->Data[offset]), WORD_SIZE);
+  if (mode == MODE_READ){ // read data from cache line
+    memcpy(data, &(Line->Data[offset]), WORD_SIZE);
     time += L2_READ_TIME;
   }
 
   // copy info from data to cache line 
-  if (mode == MODE_WRITE){
-    memcpy(&(Line->Data[offset]), block, WORD_SIZE);
+  if (mode == MODE_WRITE){ // write data from cache line
+    memcpy(&(Line->Data[offset]), data, WORD_SIZE);
     time += L2_WRITE_TIME;
     // it's unsynced w main memory
-    // NÃO ENTENDI ESTA PARTE DO UNSYNC
     Line->Dirty = 1;
   }
-    
-   // if miss, then replaced with the correct block
-
-  }
+}
 
 
 
