@@ -244,6 +244,7 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
         memcpy(&(Set->lines[i].Data[offset]), data, WORD_SIZE);
         time += L2_WRITE_TIME;
         Set->lines[i].Dirty = 1;
+        Set->lines[i].Time = time;
         return;
       }
     }
@@ -284,6 +285,7 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
     // it's unsynced w main memory
     Set->lines[way].Dirty = 1;
   }
+  Set->lines[way].Time = time;
 }
 
 
