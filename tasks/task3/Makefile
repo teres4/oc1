@@ -3,7 +3,7 @@ CFLAGS=-Wall -Wextra
 TARGET=L2Cache
 TARGET2=test
 FILE1 = output.txt
-FILE2 = results_L2_1W.txt
+FILE2 = results_L2_2W.txt
 DIFF_FILE = diff.txt
 
 all:

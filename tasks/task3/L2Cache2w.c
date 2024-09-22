@@ -164,9 +164,6 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     Line->Tag = Tag;
     Line->Dirty = 0;
   }
-  
-  // else
-  //   printf("HIT: ");
 
   if (mode == MODE_READ){ // read data from cache line
     memcpy(data, &(Line->Data[offset]), WORD_SIZE);
@@ -176,7 +173,6 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   if (mode == MODE_WRITE){ // write data from cache line
     memcpy(&(Line->Data[offset]), data, WORD_SIZE);
     time += L1_WRITE_TIME;
-    // it's unsynced w main memory
     Line->Dirty = 1;
   }
 }
@@ -194,16 +190,16 @@ void initCacheL2() {
   L2Cache.init = 1;
   for (int i = 0; i < L2_CACHE_SETS; i++){
     for(int j = 0; j < WAYS; j++){
-    /* sets words to 0 */
-        L2Cache.sets->lines[i].Valid = 0;
-        L2Cache.sets->lines[i].Dirty = 0;
-        L2Cache.sets->lines[i].Tag = 0;
-        L2Cache.sets->lines[i].Time = 0;
-    
-        for (int f = 0; f < BLOCK_SIZE; f += WORD_SIZE){
-            L2Cache.sets[i].lines[j].Data[f] = 0;
+      L2Cache.sets->lines[i].Valid = 0;
+      L2Cache.sets->lines[i].Dirty = 0;
+      L2Cache.sets->lines[i].Tag = 0;
+      L2Cache.sets->lines[i].Time = 0;
 
-         }
+      /* sets words to 0 */
+      for (int f = 0; f < BLOCK_SIZE; f += WORD_SIZE){
+        L2Cache.sets[i].lines[j].Data[f] = 0;
+
+      }
     }
   }
 }
@@ -233,61 +229,61 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
   Set *Set= &L2Cache.sets[index];
 
   /* access Cache*/
-    for(int i = 0; i < WAYS; i++){
-        if(Set->lines[i].Valid && Set->lines[i].Tag == Tag){
-            /*its a hit*/
-            if (mode == MODE_READ){ // read data from cache line
-                memcpy(data, &(Set->lines[i].Data[offset]), WORD_SIZE);
-                time += L2_READ_TIME;
-                Set->lines[i].Time = time;
-                return;
-            }
+  for(int i = 0; i < WAYS; i++){
 
-            // copy info from data to cache line 
-            if (mode == MODE_WRITE){ // write data from cache line
-                memcpy(&(Set->lines[i].Data[offset]), data, WORD_SIZE);
-                time += L2_WRITE_TIME;
-                // it's unsynced w main memory
-                Set->lines[i].Dirty = 1;
-                return;
-            }
-        }
-    }
-    /*its a miss*/
-    /*determine which line from set to replace*/
-    uint32_t lasttime = 0;
-    int way = 0;
-    for(int i = 0; i < WAYS; i++){
-        if(Set->lines[i].Time < lasttime || !lasttime || !Set->lines[i].Valid ){
-            lasttime = Set->lines[i].Time;
-            way = i;
-        }
-    }
-    MemAddress = getMemAddress(address) ;  // get address of the block in memory
-    accessDRAM(MemAddress, TempBlock, MODE_READ); // access memory and get block
-
-    if ((Set->lines[way].Valid) && (Set->lines[way].Dirty)) { // valid line w dirty block
-      accessDRAM(MemAddress, Set->lines[way].Data, MODE_WRITE); // then write back old block
-    }
-
-    memcpy(Set->lines[way].Data, TempBlock, BLOCK_SIZE); // copy new block to cache line
-
-    Set->lines[way].Valid = 1;
-    Set->lines[way].Tag = Tag;
-    Set->lines[way].Dirty = 0;
-  
-    if (mode == MODE_READ){ // read data from cache line
-        memcpy(data, &(Set->lines[way].Data[offset]), WORD_SIZE);
+    /*its a hit*/
+    if(Set->lines[i].Valid && Set->lines[i].Tag == Tag){
+      if (mode == MODE_READ){ // read data from cache line
+        memcpy(data, &(Set->lines[i].Data[offset]), WORD_SIZE);
         time += L2_READ_TIME;
-    }
+        Set->lines[i].Time = time;
+        return;
+      }
 
-    // copy info from data to cache line 
-    if (mode == MODE_WRITE){ // write data from cache line
-        memcpy(&(Set->lines[way].Data[offset]), data, WORD_SIZE);
+      if (mode == MODE_WRITE){ // write data from cache line
+        memcpy(&(Set->lines[i].Data[offset]), data, WORD_SIZE);
         time += L2_WRITE_TIME;
-        // it's unsynced w main memory
-        Set->lines[way].Dirty = 1;
+        Set->lines[i].Dirty = 1;
+        return;
+      }
     }
+  }
+
+  /*its a miss*/
+  /*determine which line from set to replace*/
+  uint32_t lasttime = 0;
+  int way = 0;
+  for(int i = 0; i < WAYS; i++){
+    if(Set->lines[i].Time < lasttime || !lasttime || !Set->lines[i].Valid ){
+      lasttime = Set->lines[i].Time;
+      way = i;
+    }
+  }
+  MemAddress = getMemAddress(address) ;  // get address of the block in memory
+  accessDRAM(MemAddress, TempBlock, MODE_READ); // access memory and get block
+
+  if ((Set->lines[way].Valid) && (Set->lines[way].Dirty)) { // valid line w dirty block
+    accessDRAM(MemAddress, Set->lines[way].Data, MODE_WRITE); // then write back old block
+  }
+
+  memcpy(Set->lines[way].Data, TempBlock, BLOCK_SIZE); // copy new block to cache line
+
+  Set->lines[way].Valid = 1;
+  Set->lines[way].Tag = Tag;
+  Set->lines[way].Dirty = 0;
+
+  if (mode == MODE_READ){ // read data from cache line
+    memcpy(data, &(Set->lines[way].Data[offset]), WORD_SIZE);
+    time += L2_READ_TIME;
+  }
+
+  // copy info from data to cache line 
+  if (mode == MODE_WRITE){ // write data from cache line
+    memcpy(&(Set->lines[way].Data[offset]), data, WORD_SIZE);
+    time += L2_WRITE_TIME;
+    // it's unsynced w main memory
+    Set->lines[way].Dirty = 1;
+  }
 }
 
 
