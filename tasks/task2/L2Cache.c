@@ -4,12 +4,6 @@
 *                                                                              *
 *******************************************************************************/
 
-/*------------------------------------------------------------------------------
-NOTAS:
-- Falta implementar o retorno do valor, em caso de miss, para a função/memória/
-programa que chamou a respetiva cache...é só mudar o valor de *data
-------------------------------------------------------------------------------*/
-
 #include "L2Cache.h"
 
 uint8_t DRAM[DRAM_SIZE];
@@ -157,9 +151,6 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     Line->Tag = Tag;
     Line->Dirty = 0;
   }
-  
-  // else
-  //   printf("HIT: ");
 
   if (mode == MODE_READ){ // read data from cache line
     memcpy(data, &(Line->Data[offset]), WORD_SIZE);
@@ -216,10 +207,6 @@ uint32_t getTagL2(uint32_t address){
 
 /*------------------------------------------------------------------------------
 Program's access point to the L2 Cache.
-
-Notes:
-- could maybe be optimized by passing tag, index and offset as args instead of
-calculating them a second time.
 ------------------------------------------------------------------------------*/
 void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
 

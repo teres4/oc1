@@ -94,11 +94,8 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   /* access Cache*/
 
-  // printf("TAG: %d INDEX: %d OFFSET: %d\t", Tag, index, offset);
-
   // if block not present - miss
   if (!Line->Valid || Line->Tag != Tag) {  
-    // printf("MISS: ");
     MemAddress = getMemAddress(address) ;  // get address of the block in memory
     accessDRAM(MemAddress, TempBlock, MODE_READ);
 
@@ -111,9 +108,6 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     Line->Tag = Tag;
     Line->Dirty = 0;
   }  // if miss, then replaced with the correct block
-
-  // else
-    // printf("HIT: ");
     
   if (mode == MODE_READ){ // read data from cache line
     memcpy(data, &(Line->Data[offset]), WORD_SIZE);

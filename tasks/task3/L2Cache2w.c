@@ -5,11 +5,6 @@
 *******************************************************************************/
 
 /*------------------------------------------------------------------------------
-NOTAS:
-- Falta implementar o retorno do valor, em caso de miss, para a função/memória/
-programa que chamou a respetiva cache...é só mudar o valor de *data
-
-
 Contém 2 entradas em cada set
 O número do bloco determina o set
 Procura todas as entradas de um determinado set de uma vez
