@@ -247,11 +247,11 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
 
   /*its a miss*/
   /*determine which line from set to replace*/
-  uint32_t lasttime = 0;
+  uint32_t leastrecent = 0;
   int way = 0;
-  for(int i = 0; i < WAYS; i++){
-    if(Set->lines[i].Time < lasttime || !lasttime || !Set->lines[i].Valid ){
-      lasttime = Set->lines[i].Time;
+  for(int i = WAYS; i > 0; i--){
+    if(Set->lines[i].Time < leastrecent || !leastrecent || !Set->lines[i].Valid ){
+      leastrecent = Set->lines[i].Time;
       way = i;
     }
   }
